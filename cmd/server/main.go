@@ -1,10 +1,17 @@
 package main
 
 import (
-	"log"
+    "log"
+    "net/http"
+    "time"
+		"os"
 
-	"github.com/SCAPUTO88/desafio-nubank-GO/internal/config"
-	"github.com/SCAPUTO88/desafio-nubank-GO/internal/domain"
+    "github.com/SCAPUTO88/desafio-nubank-GO/internal/api"
+    "github.com/SCAPUTO88/desafio-nubank-GO/internal/config"
+    "github.com/SCAPUTO88/desafio-nubank-GO/internal/domain"
+    "github.com/SCAPUTO88/desafio-nubank-GO/internal/handler"
+    "github.com/SCAPUTO88/desafio-nubank-GO/internal/repository"
+    "github.com/SCAPUTO88/desafio-nubank-GO/internal/service"
 )
 
 func main() {
@@ -16,4 +23,30 @@ func main() {
 	}
 
 	log.Println("✅ Migração concluída, tabelas prontas!")
+
+	clienteRepo := repository.NewClienteRepository(db)
+	contatoRepo := repository.NewContatoRepository(db)
+	
+	clienteService := service.NewClienteService(*clienteRepo)
+	contatoService := service.NewContatoService(*contatoRepo, *clienteRepo)
+
+	clienteHandler := handler.NewClienteHandler(clienteService)
+	contatoHandler := handler.NewContatoHandler(contatoService)
+
+	router := api.NewRouter(clienteHandler, contatoHandler)
+
+	server := &http.Server{
+		Addr:    ":8080",
+		Handler: router,
+		ErrorLog: log.New(os.Stderr, "server: ", log.Lshortfile),
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout:	10 * time.Second,
+		IdleTimeout: 	120 * time.Second,
+	}
+
+	log.Println("🚀 Servidor rodando na porta 8080")
+	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Fatalf("Erro ao iniciar servidor: %v", err)
+	}
+
 }
