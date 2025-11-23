@@ -27,8 +27,8 @@ func main() {
 	clienteRepo := repository.NewClienteRepository(db)
 	contatoRepo := repository.NewContatoRepository(db)
 	
-	clienteService := service.NewClienteService(*clienteRepo)
-	contatoService := service.NewContatoService(*contatoRepo, *clienteRepo)
+	clienteService := service.NewClienteService(clienteRepo)
+	contatoService := service.NewContatoService(contatoRepo, clienteRepo)
 
 	clienteHandler := handler.NewClienteHandler(clienteService)
 	contatoHandler := handler.NewContatoHandler(contatoService)

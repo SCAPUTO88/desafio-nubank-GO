@@ -4,14 +4,13 @@ import (
 	"errors"
 
 	"github.com/SCAPUTO88/desafio-nubank-GO/internal/domain"
-	"github.com/SCAPUTO88/desafio-nubank-GO/internal/repository"
 )
 
 type ClienteService struct {
-	repo repository.ClienteRepository
+	repo domain.ClienteRepository
 }
 
-func NewClienteService(r repository.ClienteRepository) *ClienteService {
+func NewClienteService(r domain.ClienteRepository) *ClienteService {
 	return &ClienteService{repo: r}
 }
 
