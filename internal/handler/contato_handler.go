@@ -28,7 +28,6 @@ func (h *ContatoHandler) Create(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    // Validação básica
     if dto.ClienteID == 0 || dto.Tipo == "" || dto.Valor == "" {
         http.Error(w, "ClienteID, Tipo e Valor são obrigatórios", http.StatusBadRequest)
         return
@@ -36,7 +35,6 @@ func (h *ContatoHandler) Create(w http.ResponseWriter, r *http.Request) {
 
     response, err := h.service.Create(dto)
     if err != nil {
-        // Verifica erro de negócio definido no service
         if err.Error() == "cliente_not_found" {
             http.Error(w, "Cliente não encontrado", http.StatusNotFound)
             return

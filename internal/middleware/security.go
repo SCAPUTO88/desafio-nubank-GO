@@ -22,7 +22,7 @@ func Logger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
-		next.ServerHTTP(w, r)
+		next.ServeHTTP(w, r)
 
 		log.Printf(       
 			"[%s] %s | %s | %s",

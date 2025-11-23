@@ -4,17 +4,16 @@ import (
 	"errors"
 
 	"github.com/SCAPUTO88/desafio-nubank-GO/internal/domain"
-	"github.com/SCAPUTO88/desafio-nubank-GO/internal/repository"
 )
 
 var ErrClienteNotFound = errors.New("cliente_not_found")
 
 type ContatoService struct {
-    repoContato repository.ContatoRepository
-    repoCliente repository.ClienteRepository
+    repoContato domain.ContatoRepository
+    repoCliente domain.ClienteRepository
 }
 
-func NewContatoService(cr repository.ContatoRepository, cl repository.ClienteRepository) *ContatoService {
+func NewContatoService(cr domain.ContatoRepository, cl domain.ClienteRepository) *ContatoService {
     return &ContatoService{repoContato: cr, repoCliente: cl}
 }
 
