@@ -1,17 +1,17 @@
 package main
 
 import (
-    "log"
-    "net/http"
-    "time"
-		"os"
+	"log"
+	"net/http"
+	"os"
+	"time"
 
-    "github.com/SCAPUTO88/desafio-nubank-GO/internal/api"
-    "github.com/SCAPUTO88/desafio-nubank-GO/internal/config"
-    "github.com/SCAPUTO88/desafio-nubank-GO/internal/domain"
-    "github.com/SCAPUTO88/desafio-nubank-GO/internal/handler"
-    "github.com/SCAPUTO88/desafio-nubank-GO/internal/repository"
-    "github.com/SCAPUTO88/desafio-nubank-GO/internal/service"
+	"github.com/SCAPUTO88/desafio-nubank-GO/internal/api"
+	"github.com/SCAPUTO88/desafio-nubank-GO/internal/config"
+	"github.com/SCAPUTO88/desafio-nubank-GO/internal/domain"
+	"github.com/SCAPUTO88/desafio-nubank-GO/internal/handler"
+	"github.com/SCAPUTO88/desafio-nubank-GO/internal/repository"
+	"github.com/SCAPUTO88/desafio-nubank-GO/internal/service"
 )
 
 func main() {
@@ -27,13 +27,15 @@ func main() {
 	clienteRepo := repository.NewClienteRepository(db)
 	contatoRepo := repository.NewContatoRepository(db)
 	
+	authService := service.NewAuthService()
 	clienteService := service.NewClienteService(clienteRepo)
 	contatoService := service.NewContatoService(contatoRepo, clienteRepo)
 
+	authHandler := handler.NewAuthHandler(authService)
 	clienteHandler := handler.NewClienteHandler(clienteService)
 	contatoHandler := handler.NewContatoHandler(contatoService)
 
-	router := api.NewRouter(clienteHandler, contatoHandler)
+	router := api.NewRouter(clienteHandler, contatoHandler, authHandler, authService)
 
 	server := &http.Server{
 		Addr:    ":8080",
