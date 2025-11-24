@@ -1,26 +1,39 @@
 package api
 
 import (
-    "net/http"
+	"net/http"
 
-    "github.com/SCAPUTO88/desafio-nubank-GO/internal/handler"
-    "github.com/SCAPUTO88/desafio-nubank-GO/internal/middleware"
+	"github.com/SCAPUTO88/desafio-nubank-GO/internal/handler"
+	"github.com/SCAPUTO88/desafio-nubank-GO/internal/middleware"
+	"github.com/SCAPUTO88/desafio-nubank-GO/internal/service"
 )
 
-func NewRouter(clienteHandler *handler.ClienteHandler, contatoHandler *handler.ContatoHandler) http.Handler {
-	mux := http.NewServeMux()
+func NewRouter(
+    clienteHandler *handler.ClienteHandler,
+    contatoHandler *handler.ContatoHandler,
+    authHandler *handler.AuthHandler,
+    authService *service.AuthService,
+) http.Handler {
+    mux := http.NewServeMux()
 
-	mux.HandleFunc("POST /clientes", clienteHandler.Create)
-	mux.HandleFunc("GET /clientes", clienteHandler.List)
-	mux.HandleFunc("GET /clientes/{id}/contatos", clienteHandler.ListContatos)
+    mux.HandleFunc("POST /login", authHandler.Login)
 
-	mux.HandleFunc("POST /contatos", contatoHandler.Create)
+    authMiddleware := middleware.AuthMiddleware(authService)
 
-	var h http.Handler = mux
-	h = middleware.SecurityHeaders(h)
-	h = middleware.Logger(h)
-	h = middleware.BodySizeLimiter(1024 * 1024)(h)
+    protected := func(h http.HandlerFunc) http.HandlerFunc {
+        return authMiddleware(http.HandlerFunc(h)).ServeHTTP
+    }
 
-	return h
+    mux.HandleFunc("POST /clientes", protected(clienteHandler.Create))
+    mux.HandleFunc("GET /clientes", protected(clienteHandler.List))
+    mux.HandleFunc("GET /clientes/{id}/contatos", protected(clienteHandler.ListContatos))
+    mux.HandleFunc("POST /contatos", protected(contatoHandler.Create))
 
+    var h http.Handler = mux
+    h = middleware.SecurityHeaders(h)
+    h = middleware.Logger(h)
+    h = middleware.BodySizeLimiter(1024 * 1024)(h)
+    h = middleware.RateLimitMiddleware(h)
+
+    return h
 }
