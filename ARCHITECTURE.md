@@ -1,93 +1,48 @@
-# Arquitetura do Sistema - Desafio Backend Nubank
+# Arquitetura do Sistema - Desafio Nubank (Go)
 
-Este diagrama ilustra a **Clean Architecture** e o **Fluxo de Dados** para a API Go leve e segura.
+Este documento detalha a arquitetura da solução, projetada para ser robusta, segura e escalável.
 
-```mermaid
-graph TD
-    subgraph "Externo"
-        Client[Cliente HTTP]
-    end
+## Diagrama Visual
 
-    subgraph "Ponto de Entrada (cmd/server)"
-        Main[main.go]
-        Router[Go 1.23 ServeMux]
-    end
+![Diagrama de Arquitetura Completo](docs/img/architecture_diagram.png)
 
-    subgraph "Camada de Segurança (internal/middleware)"
-        SecMW[Middleware de Segurança]
-        LogMW[Middleware de Logger]
-        LimitMW[Limitador de Tamanho de Body]
-    end
+## Visão Geral
 
-    subgraph "Camada de Interface (internal/handler)"
-        CH[Handler de Cliente]
-        CtH[Handler de Contato]
-    end
+O sistema adota **Clean Architecture** combinada com **Event-Driven Architecture** (EDA) para operações assíncronas.
 
-    subgraph "Camada de Negócio (internal/service)"
-        CS[Service de Cliente]
-        CtS[Service de Contato]
-    end
+### Fluxo de Requisição (Request Flow)
 
-    subgraph "Camada de Acesso a Dados (internal/repository)"
-        CR[Repository de Cliente]
-        CtR[Repository de Contato]
-    end
+1.  **Client**: Inicia a requisição HTTP (ex: `POST /clientes`).
+2.  **Security Layer (Middleware)**:
+    - **Rate Limiter**: Protege contra abuso (Token Bucket).
+    - **Auth Middleware**: Valida o JWT e injeta o contexto do usuário.
+    - **Security Headers**: Adiciona headers de proteção (HSTS, CSP, etc).
+3.  **Router (API)**: Roteia a requisição para o Handler apropriado.
+4.  **Handler (Interface Adapter)**:
+    - Recebe o JSON.
+    - Valida dados básicos.
+    - Chama o Service.
+5.  **Service (Use Cases)**:
+    - Executa regras de negócio.
+    - Chama o Repository para persistência.
+    - **Dispara Evento**: Após sucesso, publica mensagem no Pub/Sub.
+6.  **Repository (Data Access)**:
+    - Interage com o PostgreSQL via GORM.
+7.  **Event Layer (Async)**:
+    - **GCP Pub/Sub**: Recebe o evento `new-client-created` para processamento futuro (ex: envio de email, analytics).
 
-    subgraph "Camada de Domínio (internal/domain)"
-        Ent[Entidades & DTOs]
-    end
+## Componentes Chave
 
-    subgraph "Infraestrutura"
-        DB[(PostgreSQL)]
-    end
+| Componente     | Tecnologia    | Responsabilidade                        |
+| :------------- | :------------ | :-------------------------------------- |
+| **API Server** | Go (net/http) | Servidor HTTP leve e performático.      |
+| **Database**   | PostgreSQL    | Persistência relacional robusta.        |
+| **Messaging**  | GCP Pub/Sub   | Desacoplamento via eventos assíncronos. |
+| **Auth**       | JWT (Go-JWT)  | Autenticação stateless segura.          |
+| **Container**  | Docker        | Padronização do ambiente de execução.   |
 
-    %% Conexões de Fluxo
-    Client -->|"Requisição HTTP"| Main
-    Main --> Router
-    Router -->|"1. Requisição"| SecMW
-    SecMW --> LimitMW
-    LimitMW --> LogMW
-    LogMW -->|"2. Requisição Validada"| CH
-    LogMW -->|"2. Requisição Validada"| CtH
+## Decisões de Design
 
-    CH -->|"3. Chama Lógica"| CS
-    CtH -->|"3. Chama Lógica"| CtS
-
-    CS -->|"4. Op. Dados"| CR
-    CtS -->|"4. Op. Dados"| CtR
-
-    CR -->|"5. Consulta SQL"| DB
-    CtR -->|"5. Consulta SQL"| DB
-
-    %% Dependências
-    CH -.-> Ent
-    CtH -.-> Ent
-    CS -.-> Ent
-    CtS -.-> Ent
-    CR -.-> Ent
-    CtR -.-> Ent
-```
-
-## Responsabilidades dos Componentes
-
-1.  **Middleware de Segurança**:
-
-    - **Strict-Transport-Security**: Força HTTPS.
-    - **CSP & No-Sniff**: Mitiga XSS e MIME-sniffing.
-    - **Body Limiter**: Previne DoS via payloads grandes.
-
-2.  **Handlers**:
-
-    - Parseiam entrada JSON.
-    - Validam DTOs.
-    - Mapeiam erros HTTP.
-
-3.  **Services**:
-
-    - Regras de negócio (ex: "Cliente deve existir para adicionar Contato").
-    - Gerenciamento de transação (se necessário).
-
-4.  **Repositories**:
-    - Interações puras com banco de dados usando GORM.
-    - Sem lógica de negócio.
+- **Inversão de Dependência**: Services dependem de Interfaces, não de implementações concretas. Isso facilita testes com Mocks.
+- **Segurança em Camadas**: Proteção aplicada no nível de rede (Rate Limit), aplicação (JWT) e dados (Sanitização).
+- **Eventos Assíncronos**: O uso de Pub/Sub evita que operações secundárias (ex: notificação) travem a resposta da API principal.
