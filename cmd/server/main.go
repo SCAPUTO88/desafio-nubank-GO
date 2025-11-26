@@ -9,12 +9,15 @@ import (
 	"github.com/SCAPUTO88/desafio-nubank-GO/internal/api"
 	"github.com/SCAPUTO88/desafio-nubank-GO/internal/config"
 	"github.com/SCAPUTO88/desafio-nubank-GO/internal/domain"
+	"github.com/SCAPUTO88/desafio-nubank-GO/internal/event" // Importe o pacote event
 	"github.com/SCAPUTO88/desafio-nubank-GO/internal/handler"
 	"github.com/SCAPUTO88/desafio-nubank-GO/internal/repository"
 	"github.com/SCAPUTO88/desafio-nubank-GO/internal/service"
 )
 
 func main() {
+	os.Setenv("PUBSUB_EMULATOR_HOST", "localhost:8085")
+
 	cfg := config.Load()
 	db := config.ConnectDB(cfg.DBURL)
 
@@ -24,11 +27,17 @@ func main() {
 
 	log.Println("✅ Migração concluída, tabelas prontas!")
 
+	publisher, err := event.NewGCPPublisher("SCAPUT88_DESAFIO_GO")
+	if err != nil {
+		log.Fatalf("Erro ao criar publisher: %v", err)
+	}
+	defer publisher.Close()
+
 	clienteRepo := repository.NewClienteRepository(db)
 	contatoRepo := repository.NewContatoRepository(db)
 	
 	authService := service.NewAuthService()
-	clienteService := service.NewClienteService(clienteRepo)
+	clienteService := service.NewClienteService(clienteRepo, publisher)
 	contatoService := service.NewContatoService(contatoRepo, clienteRepo)
 
 	authHandler := handler.NewAuthHandler(authService)

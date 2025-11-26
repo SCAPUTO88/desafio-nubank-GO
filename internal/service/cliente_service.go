@@ -2,16 +2,19 @@ package service
 
 import (
 	"errors"
+	"log"
 
 	"github.com/SCAPUTO88/desafio-nubank-GO/internal/domain"
+	"github.com/SCAPUTO88/desafio-nubank-GO/internal/event"
 )
 
 type ClienteService struct {
 	repo domain.ClienteRepository
+	publisher event.EventPublisher
 }
 
-func NewClienteService(r domain.ClienteRepository) *ClienteService {
-	return &ClienteService{repo: r}
+func NewClienteService(r domain.ClienteRepository, publisher event.EventPublisher) *ClienteService {
+	return &ClienteService{repo: r, publisher: publisher}
 }
 
 func (s *ClienteService) Create(dto domain.CreateClienteDTO) (*domain.ClienteResponseDTO, error) {
@@ -23,6 +26,13 @@ func (s *ClienteService) Create(dto domain.CreateClienteDTO) (*domain.ClienteRes
 		return nil, err
 	}
 
+	go func() {
+		err := s.publisher.Publish("new-client-created", cliente)
+		if err != nil {
+			log.Printf("Falha ao publicar evento: %v", err)
+		}
+	} ()
+	
 	return &domain.ClienteResponseDTO{
 		ID: cliente.ID,
 		Nome: cliente.Nome,

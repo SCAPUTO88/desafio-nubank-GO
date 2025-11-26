@@ -8,3 +8,10 @@ services:
       POSTGRES_DB: nubank
     ports:
       - "5432:5432"
+  pubsub:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+    command: gcloud beta emulators pubsub start --project=my-project --host-port=0.0.0.0:8085
+    ports:
+      - "8085:8085"
+    environment:
+      - PUBSUB_EMULATOR_HOST=0.0.0.0:8085
