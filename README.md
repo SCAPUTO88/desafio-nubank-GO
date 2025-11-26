@@ -25,16 +25,22 @@ Diferenciais (Não obrigatórios) • Uso de Docker para subir o PostgreSQL
 - **Linguagem**: Go 1.23+
 - **Banco de Dados**: PostgreSQL
 - **ORM**: GORM
+- **Pub/Sub**: GCP Pub/Sub
 - **Autenticação**: JWT (JSON Web Tokens)
 - **Testes**: Testify + Mocks
 - **Segurança**: Rate Limiting, Security Headers, Body Limiter
 
 ## 🏛 Arquitetura
 
+## Diagrama Visual
+
+![Diagrama de Arquitetura Completo](docs/img/diagrama.png)
+
 O projeto segue os princípios da **Clean Architecture**, garantindo separação de responsabilidades e testabilidade:
 
 - `cmd/server`: Ponto de entrada (Main).
 - `internal/domain`: Entidades e Interfaces (Core do negócio).
+- `internal/events`: Implementação do pub/sub (GCP).
 - `internal/repository`: Implementação do acesso a dados (GORM).
 - `internal/service`: Regras de negócio puras.
 - `internal/handler`: Controladores HTTP (Entrada/Saída).

@@ -4,7 +4,7 @@ Este documento detalha a arquitetura da solução, projetada para ser robusta, s
 
 ## Diagrama Visual
 
-![Diagrama de Arquitetura Completo](docs/img/architecture_diagram.png)
+![Diagrama de Arquitetura Completo](docs/img/diagrama.png)
 
 ## Visão Geral
 
